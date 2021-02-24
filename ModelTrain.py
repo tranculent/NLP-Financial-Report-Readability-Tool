@@ -33,7 +33,6 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn import linear_model
 
 import matplotlib.pyplot as plt
-from matplotlib import interactive
 
 import math
 
@@ -55,11 +54,9 @@ class Training:
         # interactive(True)
         # plt.plot(self.X, self.y)
         # plt.show()
-        print("X_train: " + str(self.X_train))
-        print("y_train: " + str(self.y_train))
-        # self.feature_scale()
         self.model = self.init_model()
         self.y_pred = self.evaluate_model()
+
     
     def remove_nans(self, y):
         print("Y: " + str(y))
@@ -92,12 +89,41 @@ class Training:
         print("Evaluating model...")
         np.set_printoptions(precision=2)
         y_pred = self.model.predict(self.X_test)
-        print('Mean squared error (MSE): %.2f' + str(mean_squared_error(self.y_test, y_pred)))
-        print("R2 score: " + str(r2_score(self.y_test, y_pred)))
         print(np.concatenate((y_pred.reshape(len(y_pred),1), self.y_test.reshape(len(self.y_test),1)),1))
-        #cm = confusion_matrix(self.y_test, y_pred)
-        #print(cm)
+
+        flesch_score_table = {}
+        for i in range(100):
+            if i < 10:
+                flesch_score_table[i] = "Professional"
+            elif i < 30:
+                flesch_score_table[i] = "College graduate"
+            elif i < 50:
+                flesch_score_table[i] = "College"
+            elif i < 60:
+                flesch_score_table[i] = "10th to 12th grade"
+            elif i < 70:
+                flesch_score_table[i] = "8th & 9th grade"
+            elif i < 80:
+                flesch_score_table[i] = "7th grade"
+            elif i < 90:
+                flesch_score_table[i] = "6th grade"
+            elif i < 100:
+                flesch_score_table[i] = "5th grade"
+        print(flesch_score_table)
+        scores = []
+        for i in range(len(y_pred)):
+            if math.floor(y_pred[i]) in flesch_score_table and math.floor(self.y_test[i]) in flesch_score_table:
+                if flesch_score_table[math.floor(y_pred[i])] == flesch_score_table[math.floor(self.y_test[i])]:
+                    scores.append(100) # predicted correctly
+                else:
+                    scores.append(0) # not predicted correctly
+
+        final_score = sum(scores)/len(scores)
+        print("Accuracy score of this model is: " + str(final_score))
+
+        # Formula for normalization: 100 * (max - value) / range
         
+        # normalize the accuracy score to be in the range of 1-100
         return y_pred
 
     def feature_scale(self):

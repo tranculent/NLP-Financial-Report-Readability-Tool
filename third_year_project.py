@@ -9,6 +9,7 @@ Original file is located at
 
 from DataPreprocessing import FileExtraction, CSVManager
 from ModelTrain import Training
+from UI import UI
 
 import os
 
@@ -25,10 +26,17 @@ csvManager = CSVManager("output.csv", directory)
 
 training = Training(csvManager.get_corpus(), csvManager.get_y())
 
+#ui = UI()
+
 '''
 train the model on the corpus, 
 and then evaluate with combination of 
 the numerical features (make a formula)
+'''
+
+'''
+ Make my own evaluation using range instead of actual value matching.
+ https://en.wikipedia.org/wiki/Flesch%E2%80%93Kincaid_readability_tests -> table of score ranges
 '''
 
 # 10000 0.010 random forest
