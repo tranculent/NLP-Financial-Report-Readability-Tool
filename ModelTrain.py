@@ -25,13 +25,9 @@ from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.feature_extraction.text import CountVectorizer
 
 # Models
-from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.svm import SVR
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.linear_model import LinearRegression
-
-import matplotlib.pyplot as plt
 
 import math
 
@@ -42,11 +38,16 @@ class Training:
     def __init__(self, corpus, y):
         print("Vectorizing textual data... (ModelTrain.py)")
 
+        # Vectorizes all textual data from the reports and removes all the stop words from it
         self.cv = CountVectorizer(max_features = 30000, stop_words=stopwords.words('english'))
+
+        # Convert the vectorizer to array
         self.X = self.cv.fit_transform(corpus).toarray()
 
-        print("Labels (ModelTrain.py): " + str(y))
+        # Uncomment to see the labels
+        # print("Labels (ModelTrain.py): " + str(y))
 
+        # Remove all the NaN's from the label
         self.y = self.remove_nans(y) 
         self.y = y
 
@@ -60,7 +61,10 @@ class Training:
         # The sets are: X_train (the training data), X_test (the testing data) and y_train (the label training data), y_test (the label testing data)
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size = 0.25, random_state = 0)
         
+        # Initialize the model
         self.model = self.init_model()
+
+        # Evaluate the model and save the prediction values for future use
         self.y_pred = self.evaluate_model()
     
     def remove_nans(self, y):
@@ -83,6 +87,11 @@ class Training:
     def init_model(self):
         print("Initializing model... (ModelTrain.py)")
 
+        '''
+        The lines that are commented are different models that have been tested. 
+        To test either one of them, comment the current one and uncomment the desired model.
+        '''
+
         # Initializes a Decision Tree Regressor (uncomment to test)
         # model = DecisionTreeRegressor(random_state = 0)
         # model.fit(self.X_train, self.y_train)
@@ -91,6 +100,7 @@ class Training:
         # model = linear_model.LinearRegression()
         # model.fit(self.X_train, self.y_train)
 
+        # Initializes a Polynomial Regressor (uncomment to test) (NOTE: THIS MODEL TAKES EXTREMELY LONG TIME TO FINISH)
         # from sklearn.preprocessing import PolynomialFeatures
         # from sklearn.linear_model import LinearRegression
         # poly = PolynomialFeatures(degree=4)
@@ -98,6 +108,7 @@ class Training:
         # model = LinearRegression()
         # model.fit(X_poly, self.y_train)
 
+        # Initializes random forest regressor
         model = RandomForestRegressor(n_estimators = 10, random_state = 0)
         model.fit(self.X_train, self.y_train)
 
