@@ -6,8 +6,8 @@ import math
 import re
 
 import nltk
-# nltk.download('punkt')
-# nltk.download('stopwords')
+# nltk.download('punkt') UNCOMMENT IF FIRST TIME RUNNING THE PROGRAM (dependency)
+# nltk.download('stopwords') UNCOMMENT IF FIRST TIME RUNNING THE PROGRAM (dependency)
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.tokenize import sent_tokenize
@@ -16,9 +16,11 @@ import os
 
 from itertools import islice
 
+from Utils import flesch_score_table, ARI_table
+
 """***Data Preprocessing tools***"""
 
-class CSVManager:
+class CorpusManager:
     def __init__(self, csv_name, directory):
         print("Loading csv file...")
         self.dataset = pd.read_csv(csv_name)
@@ -29,32 +31,18 @@ class CSVManager:
         self.y = self.reshape_columns(self.y)
         
     def extract_columns(self):
-        print("     Extracting columns...")
+        print("     Extracting columns... (DataPreprocessing.py)")
         self.dataset = self.dataset.dropna(how='all')
         y = []
         corpus = []
         c = 0
-        self.flesch_score_table = {}
-        for i in range(100):
-            if i < 10:
-                self.flesch_score_table[i] = "Professional"
-            elif i < 30:
-                self.flesch_score_table[i] = "College graduate"
-            elif i < 50:
-                self.flesch_score_table[i] = "College"
-            elif i < 60:
-                self.flesch_score_table[i] = "10th to 12th grade"
-            elif i < 70:
-                self.flesch_score_table[i] = "8th & 9th grade"
-            elif i < 80:
-                self.flesch_score_table[i] = "7th grade"
-            elif i < 90:
-                self.flesch_score_table[i] = "6th grade"
-            elif i < 100:
-                self.flesch_score_table[i] = "5th grade"
+
         actual_scores = []
+
+        # Loop through every single row and column from the .csv file.
         for i in range(2, len(self.dataset.iloc[:,:])):
             count = 0
+
             # Check for eligible rows
             for j in range(len(self.dataset.iloc[i,:])):
                 if self.dataset.iloc[i,14] == 1 or self.dataset.iloc[i,16] == 1:
@@ -62,12 +50,15 @@ class CSVManager:
                         if type(self.dataset.iloc[i,j]) is not str and not np.isnan(self.dataset.iloc[i,j]): #front1 = 14, rear1 = 15, front2 = 16, rear2 = 17
                             count += 1
             
+            # If more than 14 columns have been correctly defined, proceed to scanning the csv row
             if count > 14:
                 folder = self.dataset.iloc[i,1][:-4]
                 if folder[-1] == " ":
                     folder = folder[:-1]
 
+                # If the folder for that csv row exists, proceed
                 if len(os.listdir(self.directory + "/" + folder)) != 0:
+                    # Loop through each section text for the report corresponding to the csv row
                     for text_file in os.listdir(self.directory + "/" + folder + "/" + "sections_text"):
                         t = ""
                         if text_file[1] == "_":
@@ -77,15 +68,12 @@ class CSVManager:
                                                         
                         if t[:-4] == self.dataset.iloc[i,2]:
 # ------ARI-------
+# Uncomment the following lines for more information about the fields.
                             #print("Folder: " + folder)
                             #print("Text file: " + text_file)
                             f = open(self.directory + "/" + folder + "/" + "sections_text" + "/" + text_file)
-                            # print(sent_tokenize(f.read()))
-                            # print(f.read().splitlines())
                             sentences = f.read().splitlines()
                             f.close()
-                            # sentences = corpus_reader.sents()
-                            # sentences_num = len(sentences)
                             # retrieve the number of characters
                             chars = len([char for sentence in sentences for word in sentence for char in word])
                             #print("Chars: " + str(chars))
@@ -95,79 +83,83 @@ class CSVManager:
                             # retrieve the number of sentences
                             
                             #print("Sentences: " + str(sentences))
+
+                            # Fill the ari_scores ari with the appropriate scores
                             try:
+                                # Compute the formula for every section of each report
                                 formula = 4.71 * (chars / words) + 0.5 * (words / len(sentences)) - 21.43
+
+                                # IF the formula scored below the minimum threshold, simply add the minimum threshold (avoids scaling issues)
                                 if formula < 5:
                                     self.ari_scores.append(5)
+                                # IF the formula exceeds 14, add 14 (avoids scaling issues)
                                 elif formula > 14:
                                     self.ari_scores.append(14)
                                 else:
+                                    # Formula is fine, simply add it as it is
                                     self.ari_scores.append(math.floor(formula)) # Automated readability index formula
                             except ZeroDivisionError:
                                 self.ari_scores.append(5)
                             
+                            # Check if the Flesch score column is not NaN
                             if not np.isnan(self.dataset.iloc[i,11]):
-                                if math.floor(self.dataset.iloc[i, 11]) in self.flesch_score_table:
-                                    actual_scores.append(self.flesch_score_table[math.floor(self.dataset.iloc[i, 11])])
+                                # Checks if the score is not invalid (e.g. out of the range 1-100)
+                                if math.floor(self.dataset.iloc[i, 11]) in flesch_score_table:
+                                    # Add the score to actual_scores
+                                    actual_scores.append(flesch_score_table[math.floor(self.dataset.iloc[i, 11])])
                                 else:
-                                    actual_scores.append(self.flesch_score_table[99])
+                                    # Otherwise add a 99 (avoids scaling issues)
+                                    actual_scores.append(flesch_score_table[99])
                             else:
                                 actual_scores.append("N/A")
 # ------ARI-------
+                            # Open the text file representing each section for the report
                             f = open(self.directory + "/" + folder + "/" + "sections_text" + "/" + text_file)
+
+                            # Remove everything that is not a letter with a space and convert to lower case everything.
                             contents = re.sub('[^a-zA-Z]', ' ', f.read()).lower().split()
+                            # (Optional) Uncomment to use stemming -> make sure to add ps.stem(word) for the list comprehension below
                             #ps = PorterStemmer()
+
+                            # Initialize the contents using list comprehension
                             contents = [word for word in contents]
+                            
+                            # Add the contents to the corpus.
                             corpus.append(' '.join(contents))
+
+                            # Add the label.
                             y.append(self.dataset.iloc[i,12])
+
+                            # Close file.
                             f = f.close()
+
+                            # Increase number of sections scanned.
                             c += 1
-        
-        print("Producing excel sheet...")
 
-        ARI_table = {
-            5: "5th grade",
-            6: "6th grade",
-            7: "7th grade",
-            8: "8th & 9th grade",
-            9: "8th & 9th grade",
-            10: "10th to 12th grade",
-            11: "10th to 12th grade",
-            12: "10th to 12th grade",
-            13: "College",
-            14: "Professional"
-        }
-        
-        import xlwt
-        from xlwt import Workbook
-
-        wb = Workbook()
-        sheet1 = wb.add_sheet("Scores")
+        # Get the grade levels based on the ARI_table coming from Utils.py.
         final_ari = [ARI_table[ari] for ari in self.ari_scores if ari in ARI_table]
-        for i in range(len(final_ari)):
-            sheet1.write(i+1, 0, final_ari[i])
 
-        for i in range(len(actual_scores)):
-            sheet1.write(i+1, 1, actual_scores[i])
-
+        # Initialize the baseline score.
         baseline_score = 0
 
+        # Loop through both final_ari and actual_scores
         for i in zip(final_ari, actual_scores):
-            #print(i[0] + " == " + i[1])
+            # Compare each grade level
+            # If it matches, add 1 to baseline score
             if (i[1] == "College graduate" and i[0] == "Professional") or (i[1] == "College graduate" and i[0] == "College"):
                 baseline_score += 1
             if i[0] == i[1]:
                 baseline_score += 1
 
-        print("Baseline score: " + str(baseline_score))
+        print("Baseline score (DataPreprocessing.py): " + str(baseline_score / len(actual_scores) * 100))
         
-        wb.save('baseline_scores.xls')
-        
-        print("Lengths: " + str(len(final_ari)) + " / " + str(len(actual_scores)) + " / " + str(len(self.ari_scores)))
+        print("Lengths (DataPreprocessing.py): " + str(len(final_ari)) + " / " + str(len(actual_scores)) + " / " + str(len(self.ari_scores)))
 
-        print("Count: " + str(c))
+        print("Count of scanned reports (DataPreprocessing.py): " + str(c))
+
         return (corpus, y)
     
+    # Checks if the row is valid.
     def is_valid(self, i):
         for j in range(len(self.dataset.iloc[i, :])):
             if type(self.dataset.iloc[i,j]) != str and j != 9 and j != 13:
@@ -175,6 +167,7 @@ class CSVManager:
                     return False
         return True
 
+    # Reshapes the 'y' to be in specific shape that is required by ML models.
     def reshape_columns(self, y):
         y = np.reshape(y, (len(y), 1))
         self.ari_scores = np.reshape(self.ari_scores, (len(self.ari_scores), 1))
@@ -182,6 +175,7 @@ class CSVManager:
         print(len(y))
         return y
 
+    """ Getter Methods """
     def get_y_length(self):
         return len(self.y)
     
@@ -195,6 +189,10 @@ class CSVManager:
         return self.ari_scores
 
 class FileExtraction:
+    '''
+    This class has been deprecated as the CorpusManager uses the information here plus utilizing the csv file. However, if for some reason the .csv file will not be used and only the
+    textual contents of the reports will be required, this file can be used.
+    '''
     def __init__(self, directory):
         self.directory = directory
         self.corpus = {}
@@ -217,6 +215,7 @@ class FileExtraction:
         return self.bag_of_words
 
     def print_corpus_info(self):
+        # Uncomment for more info (note that it will take a lot of printing space)
         # print("Corpus keys: " + str(self.corpus.keys()))
         print("Number of keys: " + str(len(self.corpus.keys())))
         # print("First two keys: " + str(dict(islice(self.corpus.items(), 2))))
@@ -256,19 +255,3 @@ class FileExtraction:
 
     def get_corpus(self):
         return self.corpus
-
-
-class AutomatedReadabilityIndex:
-    def __init__(self, csv_name, directory):
-        self.dataset = pd.read_csv(csv_name)
-        self.directory = directory
-    
-    def scan_reports(self):
-        self.dataset = self.dataset.dropna(how='all')
-
-        ARI_scores = [] # will contain the ARI score for each section of all reports
-
-        # Compare each entry from the flesch table with the ari score
-
-        # Loop through each section of every report
-        #
