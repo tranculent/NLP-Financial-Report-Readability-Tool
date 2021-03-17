@@ -1,0 +1,8 @@
+Testing decision_tree model
+Baseline score (DataPreprocessing.py): 17.3185105813019
+Lengths (DataPreprocessing.py): 7466 / 7466 / 7466
+Count of scanned reports (DataPreprocessing.py): 7466
+Length of Corpus entries (ModelTrain.py): 7466
+Length of labels (ModelTrain.py): 7466
+Splitting data into train/test sets... (ModelTrain.py)
+Accuracy score of this model is (ModelTrain.py): 88
