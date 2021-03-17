@@ -28,6 +28,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
 
 import math
 
@@ -35,7 +37,7 @@ from Utils import flesch_score_table
 
 '''***Feature scaling, model training and training evaluation tools.***'''
 class Training:
-    def __init__(self, corpus, y):
+    def __init__(self, corpus, y, output_file):
         print("Vectorizing textual data... (ModelTrain.py)")
 
         # Vectorizes all textual data from the reports and removes all the stop words from it
@@ -51,11 +53,13 @@ class Training:
         self.y = self.remove_nans(y) 
         self.y = y
 
+        self.output_file = output_file
+
         # printing relevant information
-        print("Corpus (vectorized) (ModelTrain.py): " + str(self.X))
-        print("Length of Corpus entries (ModelTrain.py): " + str(len(self.X)))
-        print("Length of labels (ModelTrain.py): " + str(len(self.y)))
-        print("Splitting data into train/test sets... (ModelTrain.py)")
+        with self.output_file.open('a') as file:
+            file.write("\nLength of Corpus entries (ModelTrain.py): " + str(len(self.X)))
+            file.write("\nLength of labels (ModelTrain.py): " + str(len(self.y)))
+            file.write("\nSplitting data into train/test sets... (ModelTrain.py)")
 
         # Splitting the data into all the required data sets
         # The sets are: X_train (the training data), X_test (the testing data) and y_train (the label training data), y_test (the label testing data)
@@ -101,8 +105,6 @@ class Training:
         # model.fit(self.X_train, self.y_train)
 
         # Initializes a Polynomial Regressor (uncomment to test) (NOTE: THIS MODEL TAKES EXTREMELY LONG TIME TO FINISH)
-        # from sklearn.preprocessing import PolynomialFeatures
-        # from sklearn.linear_model import LinearRegression
         # poly = PolynomialFeatures(degree=4)
         # X_poly = poly.fit_transform(self.X_train)
         # model = LinearRegression()
@@ -122,8 +124,6 @@ class Training:
         
         # prints the predicted and test values with only 2 numbers after the floating point (e.g. [0.00, 0.00])
         print(np.concatenate((y_pred.reshape(len(y_pred),1), self.y_test.reshape(len(self.y_test),1)),1))
-        
-        from pandas import DataFrame
 
         scores = []
         for i in range(len(y_pred)):
@@ -138,7 +138,8 @@ class Training:
         # scales the result to be from 1 to 100
         final_score = sum(scores)/len(scores) 
 
-        print("Accuracy score of this model is (ModelTrain.py): " + str(final_score))
+        with self.output_file.open('a') as file:
+            file.write("\nAccuracy score of this model is (ModelTrain.py): " + str(final_score))
 
         return y_pred
 
