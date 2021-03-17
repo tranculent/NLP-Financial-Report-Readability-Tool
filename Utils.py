@@ -5,6 +5,8 @@ DIRECTORY_PATH = "D:\Third Year Project\CFIE-FRSE-master\output"
 
 CSV_NAME = "output.csv"
 
+OUTPUT_FILE_NAME = "random_forest.txt"
+
 ARI_table = {
     5: "5th grade",
     6: "6th grade",
@@ -37,22 +39,13 @@ for i in range(100):
     elif i < 100:
         flesch_score_table[i] = "5th grade"
 
-def baseline(self): # UNUSED
+# This method is not used but it can be utilized inside the ModelTrain class if desired.
+# Its purpose is to evaluate the baseline score
+def baseline(self):
     # Only use the ARI scores that start from 5
     # If the ARI score is less than 5, then automatically count it out as a wrong
     print("Evaluating baseline score..")
-    ARI_table = {
-        5: "5th grade",
-        6: "6th grade",
-        7: "7th grade",
-        8: "8th & 9th grade",
-        9: "8th & 9th grade",
-        10: "10th to 12th grade",
-        11: "10th to 12th grade",
-        12: "10th to 12th grade",
-        13: "College",
-        14: "Professional"
-    }
+    import math
 
     baseline_score = 0
     for i in range(len(self.y_test)):
