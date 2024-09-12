@@ -1,4 +1,4 @@
-# Third-year-project-2
+# Financial Report Readability Analyzer
 
 ## Overview
 This project aims to evaluate the readability of annual reports from various companies using advanced Natural Language Processing (NLP) techniques and Machine Learning models. The primary goal is to develop a tool that can automatically analyze and score the readability of these reports, helping stakeholders understand how easily their content can be comprehended by readers. The project involves data preprocessing, model training, and evaluation, utilizing Python as the main programming language.
